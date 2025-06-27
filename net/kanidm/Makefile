@@ -9,7 +9,7 @@ PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/kanidm/kanidm.git
 PKG_SOURCE_DATE=2025-06-11
 PKG_SOURCE_VERSION:=v${PKG_VERSION}
-PKG_MIRROR_HASH:=791fa570faf40909cf8a7aab057f29582b66840a958fd24a747f6ca7d0891f95
+#PKG_MIRROR_HASH:=791fa570faf40909cf8a7aab057f29582b66840a958fd24a747f6ca7d0891f95
 
 PKG_MAINTAINER:=Vladimir Ermakov <vooon341@gmail.com>
 PKG_LICENSE:=MPL-2.0
@@ -42,12 +42,27 @@ define Package/kanidm/conffiles
 /etc/kanidm/
 endef
 
-# NOTE: fix compact_jwt clone problem
+# NOTE: fix compact_jwt git clone problem
 CARGO_PKG_VARS += \
-	CARGO_NET_GIT_FETCH_WITH_CLI=true
+	CARGO_NET_GIT_FETCH_WITH_CLI=true \
+	KANIDM_BUILD_PROFILE=release_linux
+
+# NOTE: fix linker=clang option passed to build, so some builds then fail to find a clang binary
+define CARGO_CONFIG_OVERRIDE
+  [target.$(RUSTC_TARGET_ARCH)]
+  # NOTE: original:
+  # linker = "clang"
+  # rustflags = ["-C", "link-arg=-fuse-ld=lld", "-Ctarget-cpu=native", "-C", "force-frame-pointers=yes"]
+  #linker = "$(TARGET_CC_NOCACHE)"
+  #rustflags = ["-C", "link-arg=-fuse-ld=lld", "-C", "force-frame-pointers=yes"]
+endef
+
+export CARGO_CONFIG_OVERRIDE
 
 # NOTE: based on Arch https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=kanidm
 define Build/Compile
+
+	echo "$$$$CARGO_CONFIG_OVERRIDE" > "$(PKG_BUILD_DIR)/.cargo/config.toml"
 
 	$(call Build/Compile/Cargo,server/daemon)
 
