@@ -1,15 +1,15 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=reaction
+PKG_NAME:=kanidm
 PKG_VERSION:=1.6.4
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/kanidm/kanidm.git
-PKG_SOURCE_DATE=2025-06-27
+PKG_SOURCE_DATE=2025-06-11
 PKG_SOURCE_VERSION:=v${PKG_VERSION}
-PKG_MIRROR_HASH:=8bbd6325e3687f9daab554a3f9e78947019571490c0131e8174a93519564ac26
+PKG_MIRROR_HASH:=791fa570faf40909cf8a7aab057f29582b66840a958fd24a747f6ca7d0891f95
 
 PKG_MAINTAINER:=Vladimir Ermakov <vooon341@gmail.com>
 PKG_LICENSE:=MPL-2.0
@@ -29,15 +29,42 @@ define Package/kanidm
   URL:=https://kanidm.com
 endef
 
+define Package/kanidm/Common/description
+Kanidm is a simple and secure identity management platform, allowing other applications
+and services to offload the challenge of authenticating and storing identities to Kanidm.
+endef
+
 define Package/kanidm/description
+$(call Package/kanidm/Common/description)
 endef
 
 define Package/kanidm/conffiles
 /etc/kanidm/
 endef
 
+# NOTE: fix compact_jwt clone problem
+CARGO_PKG_VARS += \
+	CARGO_NET_GIT_FETCH_WITH_CLI=true
+
+# NOTE: based on Arch https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=kanidm
 define Build/Compile
-	$(call Build/Compile/Cargo)
+
+	$(call Build/Compile/Cargo,server/daemon)
+
+	# (cd $(PKG_BUILD_DIR); \
+	# $(CARGO_PKG_VARS) \
+	# KANIDM_BUILD_PROFILE="release_linux" \
+	# cargo build -v \
+	# 	--profile $(CARGO_PKG_PROFILE) \
+	# 	--target-dir release \
+	# 	--features unix \
+	# 	--package daemon \
+	# 	--package kanidm-ipa-sync \
+	# 	--package kanidm_tools \
+	# 	--package kanidm_unix_int \
+	# 	--package nss_kandim \
+	# 	--package pam_kandim \
+	# )
 endef
 
 define Package/kanidm/install
